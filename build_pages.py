@@ -3,7 +3,7 @@
 사용법: python3 -I build_pages.py <시트를 xlsx로 내려받은 저장 파일 3개>
 없으면 data/trips.json(마지막으로 읽은 시트 내용)으로 만든다.
 """
-import base64, datetime, html, io, json, os, re, sys, zipfile
+import base64, datetime, glob, html, io, json, os, re, sys, zipfile
 import xml.etree.ElementTree as ET
 
 M = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
@@ -75,7 +75,7 @@ def page(cur, title, body):
     nav = ''.join(f'<a href="{h}"{on if h == cur else ""}>{n}</a>' for h, n in NAV)
     return f'''<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} | 키르기스 트레킹</title><link href="site.css" rel="stylesheet"></head>
+<title>{title} | 키르기스 트레킹</title><link href="site.css?v=3" rel="stylesheet"></head>
 <body><header class="hdr"><a class="logo" href="index.html">두드림 키르기스 트레킹</a><nav aria-label="주 메뉴">{nav}</nav></header>
 <main class="wrap">{body}</main>
 <footer class="ft">두드림여행사 · 010-2782-2660 · dodreamtour.com</footer></body></html>
@@ -161,6 +161,26 @@ def day_html(d):
             f'<div><div class="route">{esc(join(d["area"], " → "))}</div><ul>{"".join(items)}</ul><div class="meta">{m}</div></div></article>')
 
 
+def sheet_modal(key, t):
+    """일정표를 이미지로 먼저 보여 주고, 그 안에서 PDF를 내려받게 한다."""
+    pages = sorted(glob.glob(os.path.join(here, 'files', f'trip-{key}-p*.png')))
+    title = esc(t['title'])
+    name = t['title'].replace(' ', '_') + '_일정표'
+    imgs = ''.join(f'<img src="files/{os.path.basename(p)}" alt="{title} 일정표 {i}쪽" loading="lazy">'
+                   for i, p in enumerate(pages, 1))
+    return f'''<dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
+<div class="sheet-top"><b id="sheet-title">{title} 일정표</b>
+<a class="btn" href="files/trip-{key}.pdf" download="{esc(name)}.pdf">PDF 다운로드</a>
+<button class="sheet-x" id="close-sheet" type="button" aria-label="닫기">×</button></div>
+<div class="sheet-body">{imgs}</div></dialog>
+<script>
+const dlg=document.getElementById('sheet');
+document.getElementById('open-sheet').onclick=()=>dlg.showModal();
+document.getElementById('close-sheet').onclick=()=>dlg.close();
+dlg.addEventListener('click',e=>{{if(e.target===dlg)dlg.close();}});
+</script>'''
+
+
 def trip(key, t):
     m = META[key]
     facts = [('기간', m['nights']), ('최고 고도', m['peak']), ('트레킹 일수', m['trek']), ('항공', m['air']),
@@ -172,7 +192,8 @@ def trip(key, t):
 <h1>{esc(t["title"])}</h1>
 <p class="lead">{m["lead"]}</p>
 <div class="facts">{f}</div>
-<div class="acts"><a class="btn" href="index.html?course={m["course"]}">코스 지도에서 보기</a><a class="btn sec" href="compare.html">일정 비교로 돌아가기</a></div>
+<div class="acts"><a class="btn" href="index.html?course={m["course"]}">코스 지도에서 보기</a><button class="btn sec" id="open-sheet" type="button">일정표 미리보기</button><a class="btn sec" href="compare.html">일정 비교로 돌아가기</a></div>
+{sheet_modal(key, t)}
 <h2>일자별 일정</h2>
 {"".join(day_html(d) for d in t["days"])}
 <h2>일자별 고도</h2>

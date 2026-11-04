@@ -5,6 +5,8 @@
 - 페이지: `index.html`(코스 지도), `compare.html`(일정 비교), `trip-6/7/9.html`(일정 상세). 헤더는 `index.html`과 `build_pages.py`의 NAV에 있다.
 - 일정표가 바뀌면 시트를 xlsx로 받아 `python3 -I build_pages.py <저장 파일 3개>`로 다시 만든다. 파일 없이 실행하면 `data/trips.json`을 쓴다.
 - 미리보기 카메라: 경로를 미리 계산(`buildPath`)하고 `setPitchBearing`으로 움직인다. `lookAtPoint`는 각도 한계(85°)에 걸려 카메라 높이가 튄다. 지형 과장값 EX를 바꾸면 카메라 높이 계산에도 같이 반영된다.
+- 일정표 파일: `files/trip-N.pdf`와 쪽별 이미지 `files/trip-N-pK.png`는 시트에서 받은 복사본이다. 시트를 고치면 PDF와 이미지를 다시 만든 뒤 `build_pages.py`를 실행한다.
+- CSS를 고치면 `site.css?v=N` 번호를 `index.html`과 `build_pages.py`에서 함께 올린다.
 - 실행: `python3 -m http.server 3011` (launch.json `alay-lenin-map`)
 - 데이터 다시 만들기: `python3 -I build.py` → `data.js`
 - 토큰: `config.js`. 공개 배포 때는 dolomiti.co.kr로 주소가 제한된 토큰으로 바꾼다.
